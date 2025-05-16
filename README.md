@@ -65,7 +65,17 @@ This part puzzles me. Why is http.File interface inside this custom type? It’s
 You’ve discovered embedding, a quiet power in Go. In this case it's interface embedding and it resembles struct embedding. By wrapping http.File anonymously in the new type dotFileHidingFile, we say: “We are like http.File, but we carry more.”
 
 **Novus:**
-So all the methods of http.File still apply?
+So all the methods of [http.File](https://pkg.go.dev/net/http#File) still apply?
+
+```go
+type File interface {
+	io.Closer
+	io.Reader
+	io.Seeker
+	Readdir(count int) ([]fs.FileInfo, error)
+	Stat() (fs.FileInfo, error)
+}
+```
 
 **Vetus (eyes twinkling):**
 Yes. The new type inherits the interface of its embedded field. But watch this next spell carefully:
@@ -121,7 +131,7 @@ func (fsys dotFileHidingFileSystem) Open(name string) (http.File, error) {
 ```
 
 **Vetus:**
-Just as I thought. When a seeker asks for a file with dots in its ancestry, like `localhost:8080/.config` or even `localhost:8080/tmp/.config` the filesystem refuses, saying: “You have no permission.” A 403, in HTTP tongue.
+Just as I thought. When a seeker asks for a file with dots in its ancestry-like `localhost:8080/.config` or even `localhost:8080/tmp/.config`-the filesystem refuses, saying: “You have no permission.” A 403, in HTTP tongue.
 
 But if the name is clean, it hands back a cloaked file — one that hides dotfiles from view.
 
